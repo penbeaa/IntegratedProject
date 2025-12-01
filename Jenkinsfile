@@ -8,7 +8,7 @@ pipeline
     environment {
         // Docker Hub credentials ID stored in Jenkins
          DOCKERHUB_CREDENTIALS = 'docker-id'
-         IMAGE_NAME = 'penbeaa/integratedproject:latest'
+         IMAGE_NAME = 'penbeaa/integratedproject'
     }
 
     stages 
