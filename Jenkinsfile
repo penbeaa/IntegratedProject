@@ -1,13 +1,16 @@
+
+
+
 pipeline 
 {
- 
+
     agent any
     environment {
         // Docker Hub credentials ID stored in Jenkins
          DOCKERHUB_CREDENTIALS = 'docker-id'
          IMAGE_NAME = 'penbeaa/integratedproject:latest'
     }
- 
+
     stages 
     {
         stage('Cloning Git'){
@@ -15,20 +18,46 @@ pipeline
                 checkout scm
             }
         }
- 
-        stage('SAST')
+
+        stage('SAST-TEST')
         {
+            agent any
             steps
             {
-                sh 'echo Running SAST scan...'
+                script
+                {
+                    snykSecurity(
+                        snykInstallation: 'Snyk-installations',
+                        snykTokenId: 'snyk-id',
+                        severity: 'critical'
+                        
+                    )
+                }
             }
         }
- 
+
+        stage('SonarQube Analysis') {
+            agent {
+                label 'CWEB-2140-60'
+            }
+            steps {
+                script {
+                    def scannerHome = tool 'SonarQube-Scanner'
+                    withSonarQubeEnv('sonarqube') {
+                        sh "${scannerHome}/bin/sonar-scanner \
+                            -Dsonar.projectKey=gameapp \
+                            -Dsonar.sources=."
+                    }
+                }
+            }
+        }
+
         stage('BUILD-AND-TAG')
         {
-        agent {label 'CWEB-2140-60' }
+            
+             agent {label 'CWEB-2140-60' }
+           
 
- 
             steps
             {
                 script 
@@ -38,15 +67,16 @@ pipeline
                      app = docker.build("${IMAGE_NAME}")
                      app.tag("latest")
                 }
- 
+
             }
         }
- 
+
         stage('POST-TO-DOCKERHUB')
         {
+            
                 agent {label 'CWEB-2140-60' }
+            
 
- 
             steps
             {
                 script
@@ -55,18 +85,19 @@ pipeline
                     docker.withRegistry('https://registry.hub.docker.com', "${DOCKERHUB_CREDENTIALS}")
                     {
                         app.push("latest")
-                    }
- 
+                    } 
+
                 }
             }
- 
+
         }
- 
+
         stage('DEPLOYMENT')
         {
+            
                 agent {label 'CWEB-2140-60' }
+            
 
- 
             steps
             {
                 echo 'Starting deployment using docker-compose...'
@@ -84,9 +115,9 @@ pipeline
                 echo 'Deployment completed successfully!'
             }
         }
- 
- 
+
+
     }
- 
- 
+
+
 }
