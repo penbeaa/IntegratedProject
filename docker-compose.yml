@@ -5,9 +5,9 @@ services:
     build: .
     container_name: integratedproject
     ports:
-      - "90:3000"
+      - "80:4000"
     environment:
-       - PORT=3000
+       - PORT=4000
     volumes:
       - ./:/app
     command: ["node", "app.js"]
